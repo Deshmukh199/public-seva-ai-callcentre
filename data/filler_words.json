@@ -1,0 +1,266 @@
+{
+  "mr-IN": {
+    "म्हणजे": {
+      "count": 16,
+      "meaning": "I mean / that is",
+      "category": "clarification",
+      "last_seen": 1792564961337
+    },
+    "अं": {
+      "count": 22,
+      "meaning": "um / hesitation",
+      "category": "hesitation",
+      "last_seen": 1792562100000
+    },
+    "अरे": {
+      "count": 9,
+      "meaning": "oh / hey",
+      "category": "exclamation",
+      "last_seen": 1792561900000
+    },
+    "बघा": {
+      "count": 19,
+      "meaning": "you see / look",
+      "category": "attention",
+      "last_seen": 1792564961337
+    },
+    "हो ना": {
+      "count": 11,
+      "meaning": "yes right / indeed",
+      "category": "agreement",
+      "last_seen": 1792562050000
+    },
+    "बरं": {
+      "count": 13,
+      "meaning": "alright / okay",
+      "category": "transition",
+      "last_seen": 1792561800000
+    },
+    "काय ते": {
+      "count": 8,
+      "meaning": "what is that",
+      "category": "hesitation",
+      "last_seen": 1792561700000
+    },
+    "ते काय म्हणतात": {
+      "count": 6,
+      "meaning": "what do they call it",
+      "category": "hesitation",
+      "last_seen": 1792561600000
+    },
+    "आणि काय": {
+      "count": 7,
+      "meaning": "and what else",
+      "category": "transition",
+      "last_seen": 1792561500000
+    },
+    "खरं तर": {
+      "count": 5,
+      "meaning": "actually / in fact",
+      "category": "emphasis",
+      "last_seen": 1792561400000
+    },
+    "अहो": {
+      "count": 12,
+      "meaning": "polite attention marker",
+      "category": "attention",
+      "last_seen": 1792562150000
+    },
+    "ना": {
+      "count": 30,
+      "meaning": "isn't it / right",
+      "category": "tag",
+      "last_seen": 1792565081103
+    },
+    "तर": {
+      "count": 18,
+      "meaning": "so / then",
+      "category": "transition",
+      "last_seen": 1792564961337
+    },
+    "एक मिनिट": {
+      "count": 7,
+      "meaning": "one minute / wait",
+      "category": "pause",
+      "last_seen": 1792561950000
+    },
+    "ऐका ना": {
+      "count": 10,
+      "meaning": "listen please",
+      "category": "attention",
+      "last_seen": 1792562120000
+    },
+    "असं": {
+      "count": 15,
+      "meaning": "like this",
+      "category": "filler",
+      "last_seen": 1792562040000
+    },
+    "बघू": {
+      "count": 4,
+      "meaning": "let's see",
+      "category": "pause",
+      "last_seen": 1792561300000
+    },
+    "म्हंटलं तर": {
+      "count": 6,
+      "meaning": "if one says so",
+      "category": "filler",
+      "last_seen": 1792561450000
+    },
+    "कसं आहे": {
+      "count": 8,
+      "meaning": "the thing is",
+      "category": "explanation",
+      "last_seen": 1792561750000
+    },
+    "थोडक्यात काय": {
+      "count": 4,
+      "meaning": "in short",
+      "category": "summary",
+      "last_seen": 1792561200000
+    }
+  },
+  "hi-IN": {
+    "मतलब": {
+      "count": 20,
+      "meaning": "I mean",
+      "category": "clarification",
+      "last_seen": 1792564968198
+    },
+    "अरे": {
+      "count": 12,
+      "meaning": "oh / hey",
+      "category": "exclamation",
+      "last_seen": 1792562000000
+    },
+    "हम्म": {
+      "count": 24,
+      "meaning": "hmm / hesitation",
+      "category": "hesitation",
+      "last_seen": 1792562200000
+    },
+    "जैसे कि": {
+      "count": 8,
+      "meaning": "like / for example",
+      "category": "example",
+      "last_seen": 1792561800000
+    },
+    "तो": {
+      "count": 21,
+      "meaning": "so / then",
+      "category": "transition",
+      "last_seen": 1792562180000
+    },
+    "यार": {
+      "count": 10,
+      "meaning": "buddy / filler",
+      "category": "informal",
+      "last_seen": 1792561900000
+    },
+    "वैसे": {
+      "count": 9,
+      "meaning": "by the way",
+      "category": "transition",
+      "last_seen": 1792561850000
+    },
+    "अच्छा": {
+      "count": 18,
+      "meaning": "okay / alright",
+      "category": "acknowledgment",
+      "last_seen": 1792562140000
+    },
+    "हाँ जी": {
+      "count": 14,
+      "meaning": "yes sir / right",
+      "category": "polite agreement",
+      "last_seen": 1792562160000
+    },
+    "वगैरह": {
+      "count": 6,
+      "meaning": "etcetera / and so on",
+      "category": "generalization",
+      "last_seen": 1792561650000
+    },
+    "सुनिए": {
+      "count": 8,
+      "meaning": "listen please",
+      "category": "attention",
+      "last_seen": 1792562020000
+    },
+    "एक सेकंड": {
+      "count": 5,
+      "meaning": "one second",
+      "category": "pause",
+      "last_seen": 1792561720000
+    },
+    "मतलब की": {
+      "count": 9,
+      "meaning": "meaning that",
+      "category": "clarification",
+      "last_seen": 1792561920000
+    }
+  },
+  "en-IN": {
+    "um": {
+      "count": 28,
+      "meaning": "hesitation sound",
+      "category": "hesitation",
+      "last_seen": 1792562220000
+    },
+    "uh": {
+      "count": 21,
+      "meaning": "hesitation sound",
+      "category": "hesitation",
+      "last_seen": 1792562190000
+    },
+    "like": {
+      "count": 35,
+      "meaning": "filler comparison",
+      "category": "filler",
+      "last_seen": 1792562240000
+    },
+    "you know": {
+      "count": 19,
+      "meaning": "assumed agreement",
+      "category": "filler",
+      "last_seen": 1792562150000
+    },
+    "actually": {
+      "count": 15,
+      "meaning": "assertion filler",
+      "category": "adverb",
+      "last_seen": 1792564975581
+    },
+    "basically": {
+      "count": 12,
+      "meaning": "summary filler",
+      "category": "adverb",
+      "last_seen": 1792562010000
+    },
+    "I mean": {
+      "count": 10,
+      "meaning": "rephrasing filler",
+      "category": "clarification",
+      "last_seen": 1792561940000
+    },
+    "sort of": {
+      "count": 7,
+      "meaning": "approximation",
+      "category": "filler",
+      "last_seen": 1792561820000
+    },
+    "kind of": {
+      "count": 8,
+      "meaning": "approximation",
+      "category": "filler",
+      "last_seen": 1792561840000
+    },
+    "well": {
+      "count": 16,
+      "meaning": "introductory hesitation",
+      "category": "transition",
+      "last_seen": 1792562110000
+    }
+  }
+}
