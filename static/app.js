@@ -437,6 +437,8 @@ const logIt=(r,t,fillers)=>{
     c.innerHTML=demo.log.map(l=>`<div class="m ${l.r}">${l.t}${l.fillers&&l.fillers.length?`<div style="font-size:11px;color:var(--c3);margin-top:4px;font-weight:600">🏷️ Fillers: ${l.fillers.join(', ')}</div>`:''}</div>`).join('');
     c.scrollTop=1e9;
   }
+};
+
 function play(r,t){
   if(window.__activeAudio){try{window.__activeAudio.pause();window.__activeAudio.currentTime=0;}catch(e){}window.__activeAudio=null;}
   if(window.speechSynthesis)window.speechSynthesis.cancel();
