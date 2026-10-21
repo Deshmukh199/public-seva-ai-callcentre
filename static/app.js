@@ -453,6 +453,12 @@ function play(r,t){
   }else{
     const u=new SpeechSynthesisUtterance(t);
     u.lang=demo.lang||'mr-IN';
+    if(window.speechSynthesis){
+      const vs=window.speechSynthesis.getVoices();
+      const fv=vs.find(v=>(v.lang===u.lang||v.lang.startsWith(u.lang.slice(0,2)))&&(v.name.toLowerCase().includes('female')||v.name.toLowerCase().includes('priya')||v.name.toLowerCase().includes('kalpana')||v.name.toLowerCase().includes('google')||!v.name.toLowerCase().includes('male')))
+        ||vs.find(v=>v.lang===u.lang);
+      if(fv)u.voice=fv;
+    }
     u.onstart=()=>orb&&orb.classList.add('talk');
     u.onend=()=>orb&&orb.classList.remove('talk');
     speechSynthesis.speak(u);
@@ -501,7 +507,7 @@ function mic(){
 
 async function callPhone(){const r=await api('/api/call',{to:$('#ph').value,bot:$('#db').value,scriptId:$('#ds').value,contactId:$('#dc').value});toast(r.error||'Calling now. Pick up the phone.')}
 function set(){const s=S.status,row=(n,ok,d)=>`<div class="row" style="padding:12px 0;border-bottom:1px solid var(--gb)"><span><b>${n}</b><div class="sub" style="margin:0">${d}</div></span><span class="chip ${ok?'ok':'bad'}" style="flex:0">${ok?'connected':'add key in .env'}</span></div>`;
- return `<h1>Integrations</h1><div class="sub">Keys live in the .env file, never in the browser</div><div class="glass">${row('Twilio (phone calls and recording)',s.twilio,'Free trial. Verified numbers only.')}${row('Sarvam AI (Indian voice: speech-to-text and text-to-speech)',s.sarvam,'Marathi, Hindi, English voices (Bulbul v3 + Saarika v2.5)')}${row('Groq (AI brain)',s.groq,'Llama / GPT-OSS multilingual model')}${row('Google Gemini (AI brain, free tier)',s.google,'Alternative to Groq for the demo')}
+ return `<h1>Integrations</h1><div class="sub">Keys live in the .env file, never in the browser</div><div class="glass">${row('Twilio (phone calls and recording)',s.twilio,'Free trial. Verified numbers only.')}${row('Sarvam AI (Indian voice: speech-to-text and text-to-speech)',s.sarvam,'Authentic Marathi Female Voice (Priya - Bulbul v3) + Saarika v2.5 STT')}${row('Groq (AI brain)',s.groq,'Llama / GPT-OSS multilingual model')}${row('Google Gemini (AI brain, free tier)',s.google,'Alternative to Groq for the demo')}
  <div class="sub" style="margin-top:12px">Public URL: ${s.base}. Twilio inbound webhook: ${s.base}/twilio/voice</div></div>`}
 
 load();

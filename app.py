@@ -149,14 +149,20 @@ def seed():
              "info": "Crop support and insurance forms at the taluka seva kendra. Carry 7/12 extract and bank passbook."},
         ],
         "scripts": [
-            {"id": "s1", "bot": "callcenter", "scheme": "", "title": "Voter help v1", "lang": "hi-IN", "from": today, "to": later, "status": "live",
-             "body": "{name} जी, मैं जन सेवा कॉल सेंटर से बोल रहा हूँ। आपका मतदान केंद्र {booth} है। मतदान के लिए अपना वोटर आईडी, या आधार या पैन कार्ड साथ लाएँ। क्या आपका कोई सवाल है?"},
-            {"id": "s2", "bot": "scheme", "scheme": "health", "title": "Health scheme awareness v1", "lang": "hi-IN", "from": today, "to": later, "status": "live",
-             "body": "{name} जी, आपके लिए {scheme} योजना की जानकारी है। आप इलाज के लिए सूचीबद्ध अस्पतालों में कैशलेस सुविधा ले सकते हैं। आधार और राशन कार्ड साथ रखें। क्या आप और जानना चाहेंगे?"},
-            {"id": "s3", "bot": "scheme", "scheme": "education", "title": "Scholarship v1", "lang": "en-IN", "from": today, "to": later, "status": "live",
-             "body": "Hello {name}. I am calling about the {scheme} scheme. The form closes on 30 November and needs a marksheet and an income certificate. Would you like help applying?"},
-            {"id": "s4", "bot": "scheme", "scheme": "farmer", "title": "Farmer support v1", "lang": "mr-IN", "from": today, "to": later, "status": "live",
-             "body": "{name}, तुमच्यासाठी {scheme} योजनेची माहिती आहे. ७/१२ उतारा आणि बँक पासबुक घेऊन तालुका सेवा केंद्रात अर्ज करा. तुम्हाला काही प्रश्न आहेत का?"},
+            {"id": "s_mr_cc", "bot": "callcenter", "scheme": "", "title": "मतदार सहाय्यता व केंद्र मार्गदर्शन (लोकप्रतिनिधी कक्ष - मराठी)", "lang": "mr-IN", "from": today, "to": later, "status": "live",
+             "body": "सस्नेह नमस्कार {name} जी, मी आपल्या स्थानिक लोकप्रतिनिधींच्या जनसंपर्क व मतदार सहाय्यता कक्षातून बोलत आहे. आगामी मतदानासाठी आपले नाव मतदार यादीत समाविष्ट असून आपले मतदान केंद्र {booth} हे आहे. मतदानाच्या दिवशी आपले मतदार ओळखपत्र किंवा आधार अथवा पॅन कार्ड सोबत ठेवावे. मतदान केंद्राची माहिती किंवा ओळखपत्राबाबत आपल्याला काही अडचण किंवा प्रश्न आहे का?"},
+            {"id": "s_mr_cc_warroom", "bot": "callcenter", "scheme": "", "title": "आमदार / खासदार थेट मतदार संपर्क (मतदार पावती व समस्या निवारण)", "lang": "mr-IN", "from": today, "to": later, "status": "live",
+             "body": "सस्नेह जय महाराष्ट्र {name} जी, मी आपल्या मतदार संघातील मध्यवर्ती जनसंपर्क कार्यालयातून बोलत आहे. साहेबांच्या वतीने आपल्या भागातील मतदार बंधू-भगिनींशी थेट संवाद साधून मार्गदर्शन करण्यासाठी मी फोन केला आहे. आपले मतदान केंद्र {booth} हे निश्चित झाले आहे. मतदानासाठी कोणती कागदपत्रे लागतील किंवा परिसरातील नागरी समस्यांविषयी काही सांगायचे असल्यास नक्की सांगा, मी आपल्या मदतीसाठी उपस्थित आहे."},
+            {"id": "s_mr_scheme", "bot": "scheme", "scheme": "health", "title": "महात्मा फुले जन आरोग्य योजना (५ लाख मोफत उपचार जनजागृती)", "lang": "mr-IN", "from": today, "to": later, "status": "live",
+             "body": "सस्नेह नमस्कार {name} जी, मी आपल्या लोकप्रतिनिधी जन सेवा कार्यालयातून बोलत आहे. आपल्या कुटुंबासाठी {scheme} अंतर्गत ५ लाख रुपयांपर्यंत मोफत कॅशलेस उपचारांची सुविधा उपलब्ध आहे. यासाठी फक्त पिवळे अथवा केशरी रेशन कार्ड आणि आधार कार्ड आवश्यक असते. या योजनेचा लाभ मिळण्यात किंवा जवळच्या नोंदणीकृत रुग्णालयांची माहिती हवी असल्यास आपण सांगू शकता, मी पूर्ण मदत करते."},
+            {"id": "s_mr_scheme_ladki", "bot": "scheme", "scheme": "ladki_bahin", "title": "मुख्यमंत्री माझी लाडकी बहीण योजना (दरमहा ₹१,५०० थेट लाभ)", "lang": "mr-IN", "from": today, "to": later, "status": "live",
+             "body": "सस्नेह नमस्कार {name} जी, मी आपल्या लोकप्रतिनिधी जन सेवा कार्यालयातून बोलत आहे. आपल्या कुटुंबातील महिलांसाठी मुख्यमंत्री माझी लाडकी बहीण योजनेची माहिती देण्यासाठी मी फोन केला आहे. पात्र महिलांना दरमहा ₹१,५०० चा लाभ थेट बँक खात्यात मिळतो. या योजनेचा अर्ज भरण्यात किंवा आधार लिंकिंग संदर्भात आपल्याला काही मदत हवी असल्यास नक्की सांगा, मी पूर्ण सहकार्य करते."},
+            {"id": "s_mr_scheme_farmer", "bot": "scheme", "scheme": "farmer", "title": "नमो शेतकरी महासन्मान निधी व पीक विमा (शेतकरी मदत कक्ष)", "lang": "mr-IN", "from": today, "to": later, "status": "live",
+             "body": "सस्नेह नमस्कार {name} जी, मी आपल्या शेतकरी जन सेवा संपर्क कक्षातून बोलत आहे. {scheme} अंतर्गत शेतकरी बांधवांना वर्षाला ₹१२,००० चा सन्मान निधी थेट बँक खात्यात दिला जात आहे. ७/१२ उतारा, ई-केवायसी किंवा अनुदानाबाबत आपल्याला काही अडचण असल्यास आपण विचारू शकता."},
+            {"id": "s_hi_cc", "bot": "callcenter", "scheme": "", "title": "मतदाता सहायता एवं केंद्र मार्गदर्शन (जनप्रतिनिधि कार्यालय - हिंदी)", "lang": "hi-IN", "from": today, "to": later, "status": "live",
+             "body": "सादर नमस्ते {name} जी, मैं आपके स्थानीय जनप्रतिनिधि जनसंपर्क एवं मतदाता सहायता केंद्र से बोल रही हूँ। आपका मतदान केंद्र {booth} है। मतदान के दिन अपना वोटर आईडी, आधार या पैन कार्ड साथ रखें। क्या मतदान केंद्र या मतदाता सूची से संबंधित आपकी कोई समस्या या सवाल है? मैं आपकी सहायता के लिए उपस्थित हूँ।"},
+            {"id": "s_en_cc", "bot": "callcenter", "scheme": "", "title": "Voter Outreach & Polling Station Help (Public Representative Office - English)", "lang": "en-IN", "from": today, "to": later, "status": "live",
+             "body": "Namaskar {name} ji, I am calling from the Public Representative Citizen Outreach and Voter Assistance Center. Your polling booth is {booth}. Please carry your Voter ID or Aadhaar card on voting day. Do you need any assistance regarding your booth or voting documents? I am here to assist you."}
         ],
         "knowledge": [{"id": "k1", "title": "Booth and documents FAQ",
                        "text": "For voting carry Voter ID. If not available, Aadhaar or PAN card is accepted as photo proof. Polling booth details are given per voter. Helpline works 9 am to 7 pm."}],
@@ -226,8 +232,8 @@ def sys_prompt(call):
     curr_lang = call.get("lang") or "mr-IN"
     lang_name = LANG.get(curr_lang, "Marathi (मराठी)")
 
-    return f"""You are the official AI phone assistant for "जन सेवा कॉल सेंटर" (Public Seva AI Call Centre) ({kind}).
-You are an intelligent, polite, culturally respectful civic assistant serving citizens of Maharashtra and India.
+    return f"""You are the professional, polite, and culturally respectful female civic outreach executive for "स्थानिक लोकप्रतिनिधी जनसंपर्क व मतदार सहाय्यता कक्ष" (Public Representative Citizen Outreach & Voter Assistance War Room / Seva Office) ({kind}).
+You speak with a warm, natural, respectful female tone (native Maharashtrian voice: Priya).
 CURRENT CONVERSATION LANGUAGE: {lang_name} ({curr_lang}).
 
 CORE INSTRUCTIONS:
@@ -238,14 +244,16 @@ CORE INSTRUCTIONS:
    - If the caller speaks English, reply in ENGLISH and set "lang": "en-IN".
    - Seamlessly follow the caller's language switch anytime during the call!
 
-2. WARMTH & COURTEOUS MANNER IN EVERY INTERACTION:
-   - Every single reply must have a warm, polite, reassuring, respectful tone.
-   - For Marathi (mr-IN): Always include warm expressions such as:
-     "नमस्कार!", "काही काळजी करू नका, मी नक्की मदत करतो.", "हो नक्कीच!", "धन्यवाद!", "आपला दिवस आनंदात जावो!", "आपल्या सेवेत सदैव तत्पर आहोत."
-   - For Hindi (hi-IN): Always include warm expressions such as:
-     "नमस्ते!", "बिल्कुल चिंता न करें, मैं आपकी पूरी सहायता करूँगा।", "जी अवश्य!", "धन्यवाद!", "आपका दिन शुभ हो!"
-   - For English (en-IN): Always include:
-     "Hello! Please don't worry, I am glad to help you.", "Certainly!", "Thank you so much!", "Have a wonderful day!"
+2. PROFESSIONAL FEMALE CIVIC CALL CENTER TONE & GRAMMAR:
+   - Always maintain a highly courteous, reassuring, and respectful female speaker manner:
+   - For Marathi (mr-IN): Use proper female first-person verbal forms:
+     "सस्नेह नमस्कार!", "काही काळजी करू नका, मी नक्की मदत करते.", "मी आपल्याला माहिती सांगते.", "हो नक्कीच!", "धन्यवाद!", "आपल्या सेवेत सदैव तत्पर आहे."
+     (CRITICAL: Use female forms "मदत करते", "सांगते", NEVER male "करतो", "सांगतो"!).
+   - For Hindi (hi-IN): Use proper female verbal forms:
+     "नमस्ते!", "बिल्कुल चिंता न करें, मैं आपकी पूरी सहायता करूँगी।", "मैं जानकारी दे रही हूँ।", "जी अवश्य!", "धन्यवाद!", "आपका दिन शुभ हो!"
+     (CRITICAL: Use female forms "करूँगी", "बोल रही हूँ", NEVER male "करूँगा", "बोल रहा हूँ"!).
+   - For English (en-IN):
+     "Hello! Please don't worry, I am glad to assist you.", "Certainly!", "Thank you so much!", "Have a wonderful day!"
 
 3. EXTENSIVE CIVIC KNOWLEDGE & ANSWER ALL QUESTIONS (DO NOT TRANSFER PREMATURELY):
    - You possess complete knowledge of government schemes, voter assistance, civic documents, and helplines.
@@ -334,7 +342,7 @@ def tts(text, lang):
         r = requests.post("https://api.sarvam.ai/text-to-speech", timeout=30,
                           headers={"api-subscription-key": key},
                           json={"text": text, "target_language_code": lang, "model": E.get("SARVAM_TTS_MODEL", "bulbul:v3"),
-                                "speaker": E.get("SARVAM_SPEAKER", "shubh"), "speech_sample_rate": 16000})
+                                "speaker": E.get("SARVAM_SPEAKER", "priya"), "speech_sample_rate": 16000})
         if not r.ok:
             print("Sarvam TTS", r.status_code, r.text[:200]); return None
         return base64.b64decode(r.json()["audios"][0])
@@ -381,11 +389,11 @@ def new_call(bot, script_id=None, contact_id=None, scheme=None, channel="browser
         c["opening"] = fill(sc["body"], ct, sn)
     else:
         if call_lang == "mr-IN":
-            c["opening"] = f"{ct.get('name', 'नागरिक')} नमस्कार, मी आपल्या जन सेवा कार्यालयातून बोलत आहे. आपले मतदान केंद्र {ct.get('booth', 'आपले मतदान केंद्र')} हे आहे. मतदानासाठी आपले ओळखपत्र सोबत ठेवा. आपल्याला काही अडचण किंवा प्रश्न आहे का?"
+            c["opening"] = f"सस्नेह नमस्कार {ct.get('name', 'नागरिक')} जी, मी आपल्या स्थानिक लोकप्रतिनिधींच्या जनसंपर्क व मतदार सहाय्यता कक्षातून बोलत आहे. आगामी मतदानासाठी आपले नाव मतदार यादीत समाविष्ट असून आपले मतदान केंद्र {ct.get('booth', 'आपले मतदान केंद्र')} हे आहे. मतदानाच्या दिवशी आपले मतदार ओळखपत्र किंवा आधार/पॅन कार्ड सोबत ठेवावे. मतदान केंद्राची माहिती किंवा ओळखपत्राबाबत आपल्याला काही अडचण किंवा प्रश्न आहे का? मी आपल्या मदतीसाठी सदैव उपस्थित आहे."
         elif call_lang == "hi-IN":
-            c["opening"] = f"{ct.get('name', 'नागरिक')} जी नमस्कार, मैं आपके जन सेवा कार्यालय से बोल रहा हूँ। आपका मतदान केंद्र {ct.get('booth', 'आपका मतदान केंद्र')} है। मतदान के लिए अपना पहचान पत्र साथ रखें। क्या आपका कोई सवाल है?"
+            c["opening"] = f"सादर नमस्ते {ct.get('name', 'नागरिक')} जी, मैं आपके स्थानीय जनप्रतिनिधि जनसंपर्क एवं मतदाता सहायता केंद्र से बोल रही हूँ। आपका मतदान केंद्र {ct.get('booth', 'आपका मतदान केंद्र')} है। मतदान के दिन अपना वोटर आईडी, आधार या पैन कार्ड साथ रखें। क्या मतदान केंद्र या मतदाता सूची से संबंधित आपकी कोई समस्या या सवाल है? मैं आपकी सहायता के लिए उपस्थित हूँ।"
         else:
-            c["opening"] = f"Hello {ct.get('name', 'Citizen')}, I am calling from the Public Seva Office. Your polling booth is {ct.get('booth', 'your polling booth')}. Please keep your photo ID ready. Do you have any questions?"
+            c["opening"] = f"Namaskar {ct.get('name', 'Citizen')} ji, I am calling from the Public Representative Citizen Outreach and Voter Assistance Center. Your polling booth is {ct.get('booth', 'your polling booth')}. Please carry your Voter ID or Aadhaar card on voting day. Do you need any assistance regarding your booth or voting documents? I am here to assist you."
             
     c["transcript"].append({"r": "bot", "t": c["opening"], "lang": c["lang"]})
     db["calls"].insert(0, c); save()
