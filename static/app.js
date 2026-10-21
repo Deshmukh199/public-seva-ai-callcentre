@@ -417,6 +417,14 @@ function demoPage(){
     <option value="scheme">Scheme bot (आरोग्य व शासकीय योजना)</option>
   </select>
   <label>Script (live)</label><select id="ds"></select>
+  <label>Voice (Female Marathi)</label>
+  <select id="dv">
+    <option value="rupali" selected>Rupali (रुपाली - Authentic Maharashtrian Marathi Female)</option>
+    <option value="priya">Priya (प्रिया - Expressive Female)</option>
+    <option value="ritu">Ritu (रितू - Support Agent Female)</option>
+    <option value="shruti">Shruti (श्रुती - Soft Female)</option>
+    <option value="kavya">Kavya (काव्या - Clear Female)</option>
+  </select>
   <label>Contact</label><select id="dc">${S.contacts.map(c=>`<option value="${c.id}">${c.name} · ${sn(c.scheme)} (${c.lang})</option>`).join('')}</select>
   <div class="row" style="margin-top:14px"><button class="btn" onclick="startDemo()">▶ Start browser call</button></div>
   <label>Or call a phone (Twilio, e.g. +9198xxxxxxx0)</label><div class="row"><input id="ph" placeholder="+91..."><button class="btn g" onclick="callPhone()">☎ Call this number</button></div></div>
@@ -453,9 +461,10 @@ function play(r,t){
   }else{
     const u=new SpeechSynthesisUtterance(t);
     u.lang=demo.lang||'mr-IN';
+    u.pitch=1.15;
     if(window.speechSynthesis){
       const vs=window.speechSynthesis.getVoices();
-      const fv=vs.find(v=>(v.lang===u.lang||v.lang.startsWith(u.lang.slice(0,2)))&&(v.name.toLowerCase().includes('female')||v.name.toLowerCase().includes('priya')||v.name.toLowerCase().includes('kalpana')||v.name.toLowerCase().includes('google')||!v.name.toLowerCase().includes('male')))
+      const fv=vs.find(v=>(v.lang===u.lang||v.lang.startsWith(u.lang.slice(0,2)))&&(v.name.toLowerCase().includes('female')||v.name.toLowerCase().includes('rupali')||v.name.toLowerCase().includes('priya')||v.name.toLowerCase().includes('kalpana')||v.name.toLowerCase().includes('google')||!v.name.toLowerCase().includes('male')))
         ||vs.find(v=>v.lang===u.lang);
       if(fv)u.voice=fv;
     }
@@ -468,7 +477,9 @@ function play(r,t){
 async function startDemo(){
   demo.log=[];
   const bot=$('#db').value;
-  const r=await api('/api/sim/start',{bot,scriptId:$('#ds').value,contactId:$('#dc').value});
+  const speaker=$('#dv')?$('#dv').value:'rupali';
+  demo.speaker=speaker;
+  const r=await api('/api/sim/start',{bot,scriptId:$('#ds').value,contactId:$('#dc').value,speaker});
   demo.id=r.callId;
   demo.lang=r.lang||'mr-IN';
   logIt('b',r.opening);
@@ -481,7 +492,8 @@ async function sayIt(t){
   if(!demo.id||!t)return toast('Start a call first');
   $('#say').value='';
   logIt('u',t);
-  const r=await api('/api/sim/say',{callId:demo.id,text:t});
+  const speaker=demo.speaker||($('#dv')?$('#dv').value:'rupali');
+  const r=await api('/api/sim/say',{callId:demo.id,text:t,speaker});
   if(r.lang && r.lang !== demo.lang){
     demo.lang = r.lang;
     const lt = r.lang == 'mr-IN' ? 'Marathi (मराठी)' : r.lang == 'hi-IN' ? 'Hindi (हिंदी)' : 'English (en-IN)';

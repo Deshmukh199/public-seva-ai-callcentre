@@ -16,7 +16,7 @@ services:
       - key: SARVAM_TTS_MODEL
         value: "bulbul:v3"
       - key: SARVAM_SPEAKER
-        value: "priya"
+        value: "rupali"
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL

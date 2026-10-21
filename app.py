@@ -332,17 +332,23 @@ def sarvam_key():
     return (E.get("SARVAM_API_KEY") or E.get("SARVAM_KEY") or "").strip()
 
 
-def tts(text, lang):
+def tts(text, lang, speaker=None):
     """Sarvam text-to-speech -> WAV bytes (None if no key / error)."""
     load_dotenv(os.path.join(HERE, ".env"), override=True)
     key = sarvam_key()
     if not key:
         return None
     try:
+        spk = (speaker or E.get("SARVAM_SPEAKER") or "").strip()
+        # Strictly reject legacy male speakers (shubh, etc.) and ensure authentic Maharashtrian female voice
+        MALE_SPEAKERS = {"shubh", "aditya", "ashutosh", "rahul", "rohan", "amit", "dev", "ratan", "varun", "manan", "sumit", "kabir", "aayan", "advait", "anand", "tarun", "sunny", "mani", "gokul", "vijay", "mohit", "rehan", "soham"}
+        if not spk or spk.lower() in MALE_SPEAKERS:
+            spk = "rupali"
+
         r = requests.post("https://api.sarvam.ai/text-to-speech", timeout=30,
                           headers={"api-subscription-key": key},
                           json={"text": text, "target_language_code": lang, "model": E.get("SARVAM_TTS_MODEL", "bulbul:v3"),
-                                "speaker": E.get("SARVAM_SPEAKER", "priya"), "speech_sample_rate": 16000})
+                                "speaker": spk, "speech_sample_rate": 16000})
         if not r.ok:
             print("Sarvam TTS", r.status_code, r.text[:200]); return None
         return base64.b64decode(r.json()["audios"][0])
@@ -605,7 +611,7 @@ def api_contacts():
 @app.route("/api/preview", methods=["POST"])
 def api_preview():
     b = request.get_json(force=True)
-    a = tts(b["text"], b["lang"])
+    a = tts(b["text"], b["lang"], b.get("speaker"))
     return jsonify({"audio": base64.b64encode(a).decode() if a else None})
 
 
@@ -613,17 +619,20 @@ def api_preview():
 def sim_start():
     b = request.get_json(force=True)
     c = new_call(b["bot"], b.get("scriptId"), b.get("contactId"), b.get("scheme"), "browser")
-    a = tts(c["opening"], c["lang"])
-    return jsonify({"callId": c["id"], "opening": c["opening"], "lang": c["lang"], "audio": base64.b64encode(a).decode() if a else None})
+    spk = b.get("speaker") or "rupali"
+    c["speaker"] = spk
+    a = tts(c["opening"], c["lang"], spk)
+    return jsonify({"callId": c["id"], "opening": c["opening"], "lang": c["lang"], "speaker": spk, "audio": base64.b64encode(a).decode() if a else None})
 
 
 @app.route("/api/sim/say", methods=["POST"])
 def sim_say():
     b = request.get_json(force=True)
     c = find_call(b["callId"])
+    spk = b.get("speaker") or (c and c.get("speaker")) or "rupali"
     o = run_turn(c, b["text"])
-    a = tts(o["reply"], c["lang"])
-    return jsonify({**o, "lang": c["lang"], "audio": base64.b64encode(a).decode() if a else None})
+    a = tts(o["reply"], c["lang"], spk)
+    return jsonify({**o, "lang": c["lang"], "speaker": spk, "audio": base64.b64encode(a).decode() if a else None})
 
 
 @app.route("/api/call", methods=["POST"])
