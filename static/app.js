@@ -282,7 +282,24 @@ function scripts(){const list=S.scripts.filter(s=>s.bot==tab);if(!ed||ed.bot!=ta
 const ins=v=>{const e=$('#b');e.setRangeText(v,e.selectionStart,e.selectionEnd,'end');e.focus()};
 async function saveS(status){const o={id:ed.id,bot:tab,scheme:tab=='scheme'?$('#sc').value:'',title:$('#t').value,lang:$('#l').value,from:$('#f').value,to:$('#to').value,body:$('#b').value,status};const r=await api('/api/script',o);ed=r;toast(status=='live'?'Published. Both bots use it from the next call.':'Draft saved');load()}
 async function prev(){speak($('#b').value.replace(/\{name\}/g,'Ramesh').replace(/\{booth\}/g,'Ward 14 school').replace(/\{scheme\}/g,'Health Support'),$('#l').value)}
-async function speak(text,lang,ob,tx){const r=await api('/api/preview',{text,lang});const orb=$('.orb');if(r.audio){const a=new Audio('data:audio/wav;base64,'+r.audio);orb&&orb.classList.add('talk');a.onended=()=>orb&&orb.classList.remove('talk');a.play()}else{const u=new SpeechSynthesisUtterance(text);u.lang=lang;speechSynthesis.speak(u)}}
+async function speak(text,lang,ob,tx){
+  if(window.__activeAudio){try{window.__activeAudio.pause();window.__activeAudio.currentTime=0;}catch(e){}window.__activeAudio=null;}
+  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  const r=await api('/api/preview',{text,lang});
+  const orb=$('.orb');
+  if(r&&r.audio){
+    const a=new Audio('data:audio/wav;base64,'+r.audio);
+    window.__activeAudio=a;
+    if(orb)orb.classList.add('talk');
+    a.onended=()=>{if(orb)orb.classList.remove('talk');if(window.__activeAudio===a)window.__activeAudio=null;};
+    a.onerror=()=>{if(orb)orb.classList.remove('talk');if(window.__activeAudio===a)window.__activeAudio=null;};
+    a.play().catch(e=>{console.warn('Audio play error:',e);if(orb)orb.classList.remove('talk');});
+  }else{
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang=lang;
+    speechSynthesis.speak(u);
+  }
+}
 function kb(){return `<h1>Knowledge Base</h1><div class="sub">External civic guidelines, voter ID alternatives & government schemes referenced by the bot</div><div class="grid two"><div class="glass"><h2>Documents & FAQ</h2>${S.knowledge.map(k=>`<div style="padding:10px 0;border-bottom:1px solid var(--gb)"><b>${k.title}</b> <span class="chip ok">indexed</span><div class="sub" style="margin:4px 0">${k.text.slice(0,180)}...</div></div>`).join('')}</div>
  <div class="glass"><h2>Add brochure text</h2><label>Title</label><input id="kt"><label>Text (paste, or load a .txt file)</label><textarea id="kx" rows="7"></textarea><input type="file" accept=".txt" onchange="const r=new FileReader();r.onload=()=>$('#kx').value=r.result;r.readAsText(this.files[0])" style="margin:8px 0"><button class="btn" onclick="addK()">Add to knowledge base</button></div></div>`}
 async function addK(){await api('/api/knowledge',{title:$('#kt').value||'Untitled',text:$('#kx').value});toast('Indexed');load()}
@@ -420,8 +437,25 @@ const logIt=(r,t,fillers)=>{
     c.innerHTML=demo.log.map(l=>`<div class="m ${l.r}">${l.t}${l.fillers&&l.fillers.length?`<div style="font-size:11px;color:var(--c3);margin-top:4px;font-weight:600">🏷️ Fillers: ${l.fillers.join(', ')}</div>`:''}</div>`).join('');
     c.scrollTop=1e9;
   }
-};
-function play(r,t){const orb=$('.orb');if(r.audio){const a=new Audio('data:audio/wav;base64,'+r.audio);orb&&orb.classList.add('talk');a.onended=()=>orb&&orb.classList.remove('talk');a.play()}else{const u=new SpeechSynthesisUtterance(t);u.lang=demo.lang||'mr-IN';u.onstart=()=>orb.classList.add('talk');u.onend=()=>orb.classList.remove('talk');speechSynthesis.speak(u)}}
+function play(r,t){
+  if(window.__activeAudio){try{window.__activeAudio.pause();window.__activeAudio.currentTime=0;}catch(e){}window.__activeAudio=null;}
+  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  const orb=$('.orb');
+  if(r&&r.audio){
+    const a=new Audio('data:audio/wav;base64,'+r.audio);
+    window.__activeAudio=a;
+    if(orb)orb.classList.add('talk');
+    a.onended=()=>{if(orb)orb.classList.remove('talk');if(window.__activeAudio===a)window.__activeAudio=null;};
+    a.onerror=()=>{if(orb)orb.classList.remove('talk');if(window.__activeAudio===a)window.__activeAudio=null;};
+    a.play().catch(e=>{console.warn('Audio play error:',e);if(orb)orb.classList.remove('talk');});
+  }else{
+    const u=new SpeechSynthesisUtterance(t);
+    u.lang=demo.lang||'mr-IN';
+    u.onstart=()=>orb&&orb.classList.add('talk');
+    u.onend=()=>orb&&orb.classList.remove('talk');
+    speechSynthesis.speak(u);
+  }
+}
 
 async function startDemo(){
   demo.log=[];

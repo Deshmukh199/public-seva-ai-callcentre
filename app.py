@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(HERE, ".env"), override=True)
 E = os.environ
 PORT = int(E.get("PORT", "5000"))
-BASE = (E.get("BASE_URL") or f"http://localhost:{PORT}").rstrip("/")
+BASE = (E.get("BASE_URL") or E.get("RENDER_EXTERNAL_URL") or f"http://localhost:{PORT}").rstrip("/")
 DB_FILE = os.path.join(HERE, "data", "db.json")
 FILLER_FILE = os.path.join(HERE, "data", "filler_words.json")
 NUMBERS_CSV = os.path.join(HERE, "numbers.csv")
@@ -320,14 +320,19 @@ def llm(system, hist, user):
         return {"reply": txt or "नमस्कार, कृपया पुन्हा सांगा. धन्यवाद!", "lang": "mr-IN", "handoff": False, "end": False, "detected_fillers": []}
 
 
+def sarvam_key():
+    return (E.get("SARVAM_API_KEY") or E.get("SARVAM_KEY") or "").strip()
+
+
 def tts(text, lang):
     """Sarvam text-to-speech -> WAV bytes (None if no key / error)."""
     load_dotenv(os.path.join(HERE, ".env"), override=True)
-    if not E.get("SARVAM_API_KEY"):
+    key = sarvam_key()
+    if not key:
         return None
     try:
         r = requests.post("https://api.sarvam.ai/text-to-speech", timeout=30,
-                          headers={"api-subscription-key": E["SARVAM_API_KEY"]},
+                          headers={"api-subscription-key": key},
                           json={"text": text, "target_language_code": lang, "model": E.get("SARVAM_TTS_MODEL", "bulbul:v3"),
                                 "speaker": E.get("SARVAM_SPEAKER", "shubh"), "speech_sample_rate": 16000})
         if not r.ok:
@@ -340,9 +345,12 @@ def tts(text, lang):
 def stt(buf):
     """Sarvam speech-to-text -> transcript string."""
     load_dotenv(os.path.join(HERE, ".env"), override=True)
+    key = sarvam_key()
+    if not key:
+        return ""
     try:
         r = requests.post("https://api.sarvam.ai/speech-to-text", timeout=30,
-                          headers={"api-subscription-key": E["SARVAM_API_KEY"]},
+                          headers={"api-subscription-key": key},
                           files={"file": ("a.wav", buf, "audio/wav")},
                           data={"model": E.get("SARVAM_STT_MODEL", "saarika:v2.5"), "language_code": "unknown"})
         if not r.ok:
@@ -442,7 +450,7 @@ def say(text, lang):
 
 
 def listen(c):
-    if E.get("SARVAM_API_KEY"):
+    if sarvam_key():
         return f'<Record action="{BASE}/twilio/turn?cid={c["id"]}" maxLength="12" timeout="3" trim="trim-silence" playBeep="false"/>'
     return (f'<Gather input="speech" language="{c["lang"]}" speechTimeout="auto" action="{BASE}/twilio/turn?cid={c["id"]}"/>'
             f'<Redirect>{BASE}/twilio/turn?cid={c["id"]}</Redirect>')
@@ -493,7 +501,7 @@ def api_state():
     filler_occurrences = sum(sum(w.get("count", 0) for w in v.values()) for v in fillers.values())
     return jsonify({**db, "calls": calls, "fillers_summary": {"total_words": filler_count, "total_occurrences": filler_occurrences}, "status": {
         "twilio": bool(E.get("TWILIO_ACCOUNT_SID") and E.get("TWILIO_AUTH_TOKEN") and E.get("TWILIO_FROM")),
-        "sarvam": bool(E.get("SARVAM_API_KEY")), "groq": bool(E.get("GROQ_API_KEY")), "google": bool(E.get("GOOGLE_API_KEY")), "base": BASE}})
+        "sarvam": bool(sarvam_key()), "groq": bool(E.get("GROQ_API_KEY")), "google": bool(E.get("GOOGLE_API_KEY")), "base": BASE}})
 
 
 @app.route("/api/fillers", methods=["GET"])
@@ -864,7 +872,7 @@ def tw_turn():
         return xml("<Hangup/>")
     text = request.form.get("SpeechResult", "")
     rec = request.form.get("RecordingUrl")
-    if not text and rec and E.get("SARVAM_API_KEY"):
+    if not text and rec and sarvam_key():
         buf = None
         for _ in range(3):
             r = requests.get(rec + ".wav", auth=tw_auth(), timeout=30)
