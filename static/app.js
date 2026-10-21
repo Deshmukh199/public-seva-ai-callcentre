@@ -494,14 +494,19 @@ async function sayIt(t){
   logIt('u',t);
   const speaker=demo.speaker||($('#dv')?$('#dv').value:'rupali');
   const r=await api('/api/sim/say',{callId:demo.id,text:t,speaker});
+  if(r.error){
+    toast('Error: ' + r.error);
+    return;
+  }
+  const botReply = r.reply || 'नमस्कार, कृपया पुन्हा सांगा. मी आपल्या मदतीसाठी सदैव तत्पर आहे.';
   if(r.lang && r.lang !== demo.lang){
     demo.lang = r.lang;
     const lt = r.lang == 'mr-IN' ? 'Marathi (मराठी)' : r.lang == 'hi-IN' ? 'Hindi (हिंदी)' : 'English (en-IN)';
     const el=$('#langTxt'); if(el) el.textContent = lt;
     toast('🌐 Switched language to ' + lt);
   }
-  logIt('b',r.reply,r.detected_fillers);
-  play(r,r.reply);
+  logIt('b',botReply,r.detected_fillers);
+  play(r,botReply);
   if(r.handoff)toast('Hand-off: connecting the scheme expert');
   fillersData = null; // Refresh fillers on next view
   await load();

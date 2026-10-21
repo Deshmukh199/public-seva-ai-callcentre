@@ -375,7 +375,24 @@ def stt(buf):
 
 
 def find_call(cid):
-    return next((c for c in db["calls"] if c["id"] == cid), None)
+    if not cid:
+        return None
+    # 1. Search in-memory
+    c = next((x for x in db.get("calls", []) if x["id"] == cid), None)
+    if c:
+        return c
+    # 2. Reload from disk in case written by another worker/process
+    try:
+        if os.path.exists(DB_FILE):
+            with open(DB_FILE, encoding="utf-8") as f:
+                disk_db = json.load(f)
+                c = next((x for x in disk_db.get("calls", []) if x["id"] == cid), None)
+                if c:
+                    db["calls"] = disk_db.get("calls", [])
+                    return c
+    except Exception as e:
+        print("Error reloading db in find_call:", e)
+    return None
 
 
 def new_call(bot, script_id=None, contact_id=None, scheme=None, channel="browser", phone=""):
@@ -628,9 +645,15 @@ def sim_start():
 @app.route("/api/sim/say", methods=["POST"])
 def sim_say():
     b = request.get_json(force=True)
-    c = find_call(b["callId"])
+    cid = b.get("callId")
+    c = find_call(cid)
+    if not c:
+        # Reconstruct call session seamlessly so turn never fails
+        c = new_call("callcenter", None, None, None, "browser")
+        if cid:
+            c["id"] = cid
     spk = b.get("speaker") or (c and c.get("speaker")) or "rupali"
-    o = run_turn(c, b["text"])
+    o = run_turn(c, b.get("text", ""))
     a = tts(o["reply"], c["lang"], spk)
     return jsonify({**o, "lang": c["lang"], "speaker": spk, "audio": base64.b64encode(a).decode() if a else None})
 
