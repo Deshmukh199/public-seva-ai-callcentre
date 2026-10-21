@@ -574,8 +574,13 @@ function mic(){
 
 async function callPhone(){const r=await api('/api/call',{to:$('#ph').value,bot:$('#db').value,scriptId:$('#ds').value,contactId:$('#dc').value});toast(r.error||'Calling now. Pick up the phone.')}
 function set(){const s=S.status,row=(n,ok,d)=>`<div class="row" style="padding:12px 0;border-bottom:1px solid var(--gb)"><span><b>${n}</b><div class="sub" style="margin:0">${d}</div></span><span class="chip ${ok?'ok':'bad'}" style="flex:0">${ok?'connected':'add key in .env'}</span></div>`;
- return `<h1>Integrations</h1><div class="sub">Keys live in the .env file, never in the browser</div><div class="glass">${row('Twilio (phone calls and recording)',s.twilio,'Free trial. Verified numbers only.')}${row('Sarvam AI (Indian voice: speech-to-text and text-to-speech)',s.sarvam,'Authentic Marathi Female Voice (Priya - Bulbul v3) + Saarika v2.5 STT')}${row('Groq (AI brain)',s.groq,'Llama / GPT-OSS multilingual model')}${row('Google Gemini (AI brain, free tier)',s.google,'Alternative to Groq for the demo')}
- <div class="sub" style="margin-top:12px">Public URL: ${s.base}. Twilio inbound webhook: ${s.base}/twilio/voice</div></div>`}
+ return `<h1>Integrations</h1><div class="sub">Keys live in the .env file, never in the browser</div><div class="glass">${row('Twilio (phone calls and recording)',s.twilio,'Free trial. Verified numbers only.')}${row('Sarvam AI (Indian voice: speech-to-text and text-to-speech)',s.sarvam,'Authentic Marathi Female Voice (Rupali - Bulbul v3) + Saarika v2.5 STT')}${row('Groq (AI brain)',s.groq,'Llama / GPT-OSS multilingual model')}${row('Google Gemini (AI brain, free tier)',s.google,'Alternative to Groq for the demo')}${row('WhatsApp (Twilio WhatsApp API)',s.whatsapp,'Set TWILIO_WHATSAPP_FROM in .env. Webhook: /whatsapp')}
+ <div class="sub" style="margin-top:12px">Public URL: ${s.base}. Twilio inbound webhook: ${s.base}/twilio/voice</div>
+ <div class="sub" style="margin-top:6px">WhatsApp webhook: <b>${s.base}/whatsapp</b> (set this in Twilio Console → Messaging → WhatsApp Sandbox → "When a message comes in")</div></div>
+ <div class="glass" style="margin-top:16px"><h2>WhatsApp Quick Send</h2><div class="sub">Send a test WhatsApp message to a contact</div>
+ <div class="row"><div><label>Phone (with +91)</label><input id="wa_to" placeholder="+919820011223"></div><div><label>Message</label><input id="wa_msg" placeholder="नमस्कार! आपल्या मतदान केंद्राची माहिती..."></div></div>
+ <button class="btn" style="margin-top:10px" onclick="sendWA()">📱 Send WhatsApp</button></div>`}
+async function sendWA(){const to=$('#wa_to').value,message=$('#wa_msg').value;if(!to||!message)return toast('Enter phone and message');const r=await api('/api/whatsapp/send',{to,message});toast(r.error||'WhatsApp sent! ✅')}
 
 load();
 setInterval(async () => {

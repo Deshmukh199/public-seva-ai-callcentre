@@ -15,13 +15,31 @@ services:
         sync: false
       - key: SARVAM_TTS_MODEL
         value: "bulbul:v3"
+      - key: SARVAM_STT_MODEL
+        value: "saarika:v2.5"
       - key: SARVAM_SPEAKER
         value: "rupali"
+      - key: SARVAM_TTS_PACE
+        value: "1.25"
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
         value: "openai/gpt-oss-120b"
       - key: GOOGLE_API_KEY
         sync: false
+      - key: GEMINI_MODEL
+        value: "gemini-2.0-flash"
+      - key: LLM
+        value: "groq"
       - key: BASE_URL
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM
+        sync: false
+      - key: EXPERT_PHONE
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
         sync: false

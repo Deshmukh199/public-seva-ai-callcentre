@@ -274,7 +274,9 @@ CORE INSTRUCTIONS:
    - Return any filler words detected in "detected_fillers": ["word1", ...].
 
 5. CONCISE SPOKEN FORMAT:
-   - Keep replies within 2-3 short, spoken sentences that sound natural over a phone call.
+   - Keep replies within 1-2 SHORT, crisp spoken sentences that sound natural over a phone call.
+   - Do NOT write long paragraphs. Be BRIEF and direct.
+   - Maximum 40-50 words per reply. Shorter is better.
 
 SCRIPT: {fill(sc['body'], ct, sch['name'] if sch else '') if sc else ''}
 SCHEME INFO: {(sch['name'] + ': ' + sch['info']) if sch else 'n/a'}
@@ -290,9 +292,10 @@ def llm(system, hist, user):
     txt = ""
     try:
         if E.get("GROQ_API_KEY") and not use_gemini:
-            r = requests.post("https://api.groq.com/openai/v1/chat/completions", timeout=30,
+            r = requests.post("https://api.groq.com/openai/v1/chat/completions", timeout=15,
                               headers={"Authorization": "Bearer " + E["GROQ_API_KEY"]},
-                              json={"model": E.get("GROQ_MODEL", "openai/gpt-oss-120b"), "temperature": 0.3,
+                              json={"model": E.get("GROQ_MODEL", "openai/gpt-oss-120b"), "temperature": 0.2,
+                                    "max_tokens": 250,
                                     "response_format": {"type": "json_object"},
                                     "messages": [{"role": "system", "content": system}, *hist, {"role": "user", "content": user}]})
             j = r.json()
@@ -304,8 +307,8 @@ def llm(system, hist, user):
             contents = [{"role": "user" if h["role"] == "user" else "model", "parts": [{"text": h["content"]}]} for h in hist]
             contents.append({"role": "user", "parts": [{"text": user}]})
             r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={E['GOOGLE_API_KEY']}",
-                              timeout=30, json={"systemInstruction": {"parts": [{"text": system}]}, "contents": contents,
-                                                "generationConfig": {"responseMimeType": "application/json", "temperature": 0.3}})
+                              timeout=15, json={"systemInstruction": {"parts": [{"text": system}]}, "contents": contents,
+                                                "generationConfig": {"responseMimeType": "application/json", "temperature": 0.2, "maxOutputTokens": 250}})
             j = r.json()
             try:
                 txt = j["candidates"][0]["content"]["parts"][0]["text"]
@@ -345,10 +348,11 @@ def tts(text, lang, speaker=None):
         if not spk or spk.lower() in MALE_SPEAKERS:
             spk = "rupali"
 
-        r = requests.post("https://api.sarvam.ai/text-to-speech", timeout=30,
+        pace = float(E.get("SARVAM_TTS_PACE", "1.25"))
+        r = requests.post("https://api.sarvam.ai/text-to-speech", timeout=12,
                           headers={"api-subscription-key": key},
                           json={"text": text, "target_language_code": lang, "model": E.get("SARVAM_TTS_MODEL", "bulbul:v3"),
-                                "speaker": spk, "speech_sample_rate": 16000})
+                                "speaker": spk, "pace": pace, "speech_sample_rate": 22050})
         if not r.ok:
             print("Sarvam TTS", r.status_code, r.text[:200]); return None
         return base64.b64decode(r.json()["audios"][0])
@@ -532,7 +536,9 @@ def api_state():
     filler_occurrences = sum(sum(w.get("count", 0) for w in v.values()) for v in fillers.values())
     return jsonify({**db, "calls": calls, "fillers_summary": {"total_words": filler_count, "total_occurrences": filler_occurrences}, "status": {
         "twilio": bool(E.get("TWILIO_ACCOUNT_SID") and E.get("TWILIO_AUTH_TOKEN") and E.get("TWILIO_FROM")),
-        "sarvam": bool(sarvam_key()), "groq": bool(E.get("GROQ_API_KEY")), "google": bool(E.get("GOOGLE_API_KEY")), "base": BASE}})
+        "sarvam": bool(sarvam_key()), "groq": bool(E.get("GROQ_API_KEY")), "google": bool(E.get("GOOGLE_API_KEY")),
+        "whatsapp": bool(E.get("TWILIO_WHATSAPP_FROM") and E.get("TWILIO_ACCOUNT_SID")),
+        "base": BASE}})
 
 
 @app.route("/api/fillers", methods=["GET"])
@@ -958,7 +964,149 @@ def tw_rec():
     return jsonify({})
 
 
+# ---------------------------------------------------------------- WhatsApp Integration (Twilio)
+WHATSAPP_SESSIONS = {}  # phone -> {callId, lang, last_active}
+WHATSAPP_LOCK = threading.Lock()
+
+
+def wa_get_or_create_session(sender):
+    """Get existing WhatsApp session or create new one for this sender."""
+    with WHATSAPP_LOCK:
+        sess = WHATSAPP_SESSIONS.get(sender)
+        # Expire sessions after 30 minutes of inactivity
+        if sess and (time.time() - sess.get("last_active", 0)) > 1800:
+            sess = None
+        if not sess:
+            # Find contact by phone number
+            phone_clean = sender.replace("whatsapp:", "").strip()
+            ct = next((c for c in db["contacts"] if c.get("phone", "").replace("+", "").replace(" ", "") == phone_clean.replace("+", "").replace(" ", "")), None)
+            contact_id = ct["id"] if ct else None
+            call = new_call("callcenter", contact_id=contact_id, channel="whatsapp", phone=phone_clean)
+            sess = {"callId": call["id"], "lang": call.get("lang", "mr-IN"), "last_active": time.time()}
+            WHATSAPP_SESSIONS[sender] = sess
+        else:
+            sess["last_active"] = time.time()
+        return sess
+
+
+@app.route("/whatsapp", methods=["POST"])
+def whatsapp_incoming():
+    """Handle incoming WhatsApp messages via Twilio."""
+    sender = request.form.get("From", "")
+    incoming_msg = request.form.get("Body", "").strip()
+    num_media = int(request.form.get("NumMedia", "0"))
+
+    if not incoming_msg and num_media == 0:
+        return Response('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', mimetype="text/xml")
+
+    # Handle voice notes (media)
+    if num_media > 0 and not incoming_msg:
+        media_url = request.form.get("MediaUrl0", "")
+        media_type = request.form.get("MediaContentType0", "")
+        if "audio" in media_type and media_url and sarvam_key():
+            try:
+                r = requests.get(media_url, auth=tw_auth(), timeout=15)
+                if r.ok:
+                    incoming_msg = stt(r.content) or ""
+            except Exception as e:
+                print("WhatsApp voice note STT error:", e)
+        if not incoming_msg:
+            twiml = '<?xml version="1.0" encoding="UTF-8"?><Response><Message>'
+            twiml += 'माफ करा, कृपया लिखित संदेश पाठवा किंवा स्पष्ट आवाजात बोला. धन्यवाद! 🙏'
+            twiml += '</Message></Response>'
+            return Response(twiml, mimetype="text/xml")
+
+    # Get or create session
+    sess = wa_get_or_create_session(sender)
+    call = find_call(sess["callId"])
+
+    if not call:
+        # Recreate session if call was lost
+        with WHATSAPP_LOCK:
+            WHATSAPP_SESSIONS.pop(sender, None)
+        sess = wa_get_or_create_session(sender)
+        call = find_call(sess["callId"])
+
+    # Handle special commands
+    lower_msg = incoming_msg.lower().strip()
+    if lower_msg in ["reset", "नवीन", "new", "restart"]:
+        with WHATSAPP_LOCK:
+            WHATSAPP_SESSIONS.pop(sender, None)
+        twiml = '<?xml version="1.0" encoding="UTF-8"?><Response><Message>'
+        twiml += '🔄 संभाषण रीसेट झाले. नवीन संदेश पाठवा! / Conversation reset. Send a new message!'
+        twiml += '</Message></Response>'
+        return Response(twiml, mimetype="text/xml")
+
+    # First message - send opening + process their message
+    if call and len(call.get("transcript", [])) <= 1:
+        # Send opening greeting first, then process
+        opening = call.get("opening", "")
+        out = run_turn(call, incoming_msg)
+        reply_text = out.get("reply", "नमस्कार, कृपया पुन्हा सांगा.")
+        # Update session language
+        sess["lang"] = call.get("lang", "mr-IN")
+    else:
+        out = run_turn(call, incoming_msg)
+        reply_text = out.get("reply", "नमस्कार, कृपया पुन्हा सांगा.")
+        sess["lang"] = call.get("lang", "mr-IN")
+
+    # Build TwiML response
+    twiml = '<?xml version="1.0" encoding="UTF-8"?><Response><Message>'
+    twiml += esc(reply_text)
+
+    # Add filler detection info if any
+    fillers = out.get("detected_fillers", [])
+    if fillers:
+        twiml += f'\n\n🏷️ Fillers detected: {", ".join(fillers)}'
+
+    # Add handoff notice
+    if out.get("handoff"):
+        ex = next((s["expert"] for s in db["schemes"] if s["id"] == call.get("scheme")), db["schemes"][0]["expert"])
+        twiml += f'\n\n📞 तज्ञांशी जोडत आहे: {ex.get("name", "Expert")}'
+        if ex.get("phone"):
+            twiml += f' ({ex["phone"]})'
+
+    twiml += '</Message></Response>'
+    return Response(twiml, mimetype="text/xml")
+
+
+@app.route("/whatsapp/status", methods=["POST"])
+def whatsapp_status():
+    """WhatsApp message status callback."""
+    return jsonify({"ok": True})
+
+
+@app.route("/api/whatsapp/send", methods=["POST"])
+def api_whatsapp_send():
+    """Send a WhatsApp message to a phone number (outbound)."""
+    need_twilio()
+    b = request.get_json(force=True)
+    to = b.get("to", "").strip()
+    message = b.get("message", "").strip()
+    if not to or not message:
+        return jsonify({"error": "'to' and 'message' are required"}), 400
+
+    wa_from = E.get("TWILIO_WHATSAPP_FROM", "")
+    if not wa_from:
+        return jsonify({"error": "Add TWILIO_WHATSAPP_FROM in .env (e.g. whatsapp:+14155238886)"}), 400
+
+    try:
+        r = requests.post(
+            f"https://api.twilio.com/2010-04-01/Accounts/{E['TWILIO_ACCOUNT_SID']}/Messages.json",
+            auth=tw_auth(), timeout=15,
+            data={"To": f"whatsapp:{to}" if not to.startswith("whatsapp:") else to,
+                  "From": wa_from,
+                  "Body": message})
+        j = r.json()
+        if not r.ok:
+            return jsonify({"error": j.get("message", "Twilio error")}), 400
+        return jsonify({"ok": True, "sid": j.get("sid")})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     print(f"\n  Public Seva AI Call Centre -> http://localhost:{PORT}")
-    print(f"  Twilio inbound webhook:      {BASE}/twilio/voice\n")
+    print(f"  Twilio inbound webhook:      {BASE}/twilio/voice")
+    print(f"  WhatsApp webhook:            {BASE}/whatsapp\n")
     app.run(host="0.0.0.0", port=PORT, debug=False)
