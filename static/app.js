@@ -447,6 +447,22 @@ const logIt=(r,t,fillers)=>{
   }
 };
 
+function speakFallback(t){
+  if(window.speechSynthesis){
+    const u=new SpeechSynthesisUtterance(t);
+    u.lang=demo.lang||'mr-IN';
+    u.pitch=1.15;
+    const vs=window.speechSynthesis.getVoices();
+    const fv=vs.find(v=>(v.lang===u.lang||v.lang.startsWith(u.lang.slice(0,2)))&&(v.name.toLowerCase().includes('female')||v.name.toLowerCase().includes('rupali')||v.name.toLowerCase().includes('priya')||v.name.toLowerCase().includes('kalpana')||v.name.toLowerCase().includes('google')||!v.name.toLowerCase().includes('male')))
+      ||vs.find(v=>v.lang===u.lang);
+    if(fv)u.voice=fv;
+    const orb=$('.orb');
+    u.onstart=()=>orb&&orb.classList.add('talk');
+    u.onend=()=>orb&&orb.classList.remove('talk');
+    window.speechSynthesis.speak(u);
+  }
+}
+
 function play(r,t){
   if(window.__activeAudio){try{window.__activeAudio.pause();window.__activeAudio.currentTime=0;}catch(e){}window.__activeAudio=null;}
   if(window.speechSynthesis)window.speechSynthesis.cancel();
@@ -456,30 +472,29 @@ function play(r,t){
     window.__activeAudio=a;
     if(orb)orb.classList.add('talk');
     a.onended=()=>{if(orb)orb.classList.remove('talk');if(window.__activeAudio===a)window.__activeAudio=null;};
-    a.onerror=()=>{if(orb)orb.classList.remove('talk');if(window.__activeAudio===a)window.__activeAudio=null;};
-    a.play().catch(e=>{console.warn('Audio play error:',e);if(orb)orb.classList.remove('talk');});
+    a.onerror=()=>{
+      console.warn('Audio playback error, falling back to speech synthesis');
+      if(orb)orb.classList.remove('talk');
+      if(window.__activeAudio===a)window.__activeAudio=null;
+      speakFallback(t);
+    };
+    a.play().catch(e=>{
+      console.warn('Audio play() rejected, falling back to synthesis:',e);
+      speakFallback(t);
+    });
   }else{
-    const u=new SpeechSynthesisUtterance(t);
-    u.lang=demo.lang||'mr-IN';
-    u.pitch=1.15;
-    if(window.speechSynthesis){
-      const vs=window.speechSynthesis.getVoices();
-      const fv=vs.find(v=>(v.lang===u.lang||v.lang.startsWith(u.lang.slice(0,2)))&&(v.name.toLowerCase().includes('female')||v.name.toLowerCase().includes('rupali')||v.name.toLowerCase().includes('priya')||v.name.toLowerCase().includes('kalpana')||v.name.toLowerCase().includes('google')||!v.name.toLowerCase().includes('male')))
-        ||vs.find(v=>v.lang===u.lang);
-      if(fv)u.voice=fv;
-    }
-    u.onstart=()=>orb&&orb.classList.add('talk');
-    u.onend=()=>orb&&orb.classList.remove('talk');
-    speechSynthesis.speak(u);
+    speakFallback(t);
   }
 }
 
 async function startDemo(){
   demo.log=[];
-  const bot=$('#db').value;
+  const bot=$('#db')?$('#db').value:'callcenter';
   const speaker=$('#dv')?$('#dv').value:'rupali';
   demo.speaker=speaker;
-  const r=await api('/api/sim/start',{bot,scriptId:$('#ds').value,contactId:$('#dc').value,speaker});
+  const scriptId=$('#ds')?$('#ds').value:null;
+  const contactId=$('#dc')?$('#dc').value:null;
+  const r=await api('/api/sim/start',{bot,scriptId,contactId,speaker});
   demo.id=r.callId;
   demo.lang=r.lang||'mr-IN';
   logIt('b',r.opening);
@@ -489,27 +504,62 @@ async function startDemo(){
 }
 
 async function sayIt(t){
-  if(!demo.id||!t)return toast('Start a call first');
+  const text=(t||'').trim();
+  if(!text)return;
   $('#say').value='';
-  logIt('u',t);
+
+  // Auto-start demo call if not started yet!
+  if(!demo.id){
+    await startDemo();
+  }
+
+  logIt('u',text);
+
+  // Show thinking indicator
+  const chat=$('#chat');
+  let typingBubble=null;
+  if(chat){
+    typingBubble=document.createElement('div');
+    typingBubble.className='m b';
+    typingBubble.id='typingBubble';
+    typingBubble.style.opacity='0.85';
+    typingBubble.style.fontStyle='italic';
+    typingBubble.innerHTML='<span class="dot"></span> उत्तर तयार करत आहे... (Thinking...)';
+    chat.appendChild(typingBubble);
+    chat.scrollTop=1e9;
+  }
+  const orb=$('.orb');
+  if(orb)orb.classList.add('talk');
+
   const speaker=demo.speaker||($('#dv')?$('#dv').value:'rupali');
-  const r=await api('/api/sim/say',{callId:demo.id,text:t,speaker});
-  if(r.error){
-    toast('Error: ' + r.error);
-    return;
+  try{
+    const r=await api('/api/sim/say',{callId:demo.id,text,speaker});
+    if(typingBubble&&typingBubble.parentNode)typingBubble.remove();
+
+    if(r.error){
+      toast('Server: ' + r.error);
+      if(orb)orb.classList.remove('talk');
+      return;
+    }
+    const botReply=r.reply||'नमस्कार, कृपया पुन्हा सांगा. मी आपल्या मदतीसाठी सदैव तत्पर आहे.';
+    if(r.lang && r.lang !== demo.lang){
+      demo.lang = r.lang;
+      const lt = r.lang == 'mr-IN' ? 'Marathi (मराठी)' : r.lang == 'hi-IN' ? 'Hindi (हिंदी)' : 'English (en-IN)';
+      const el=$('#langTxt'); if(el) el.textContent = lt;
+      toast('🌐 Switched language to ' + lt);
+    }
+    logIt('b',botReply,r.detected_fillers);
+    play(r,botReply);
+    if(r.handoff)toast('Hand-off: connecting the scheme expert');
+    fillersData = null; // Refresh fillers cache
+    // Background state update WITHOUT re-rendering demo page DOM!
+    api('/api/state').then(st=>{S=st;}).catch(()=>{});
+  }catch(err){
+    if(typingBubble&&typingBubble.parentNode)typingBubble.remove();
+    if(orb)orb.classList.remove('talk');
+    console.error('sayIt error:',err);
+    toast('Connection issue: ' + (err.message||'please retry'));
   }
-  const botReply = r.reply || 'नमस्कार, कृपया पुन्हा सांगा. मी आपल्या मदतीसाठी सदैव तत्पर आहे.';
-  if(r.lang && r.lang !== demo.lang){
-    demo.lang = r.lang;
-    const lt = r.lang == 'mr-IN' ? 'Marathi (मराठी)' : r.lang == 'hi-IN' ? 'Hindi (हिंदी)' : 'English (en-IN)';
-    const el=$('#langTxt'); if(el) el.textContent = lt;
-    toast('🌐 Switched language to ' + lt);
-  }
-  logIt('b',botReply,r.detected_fillers);
-  play(r,botReply);
-  if(r.handoff)toast('Hand-off: connecting the scheme expert');
-  fillersData = null; // Refresh fillers on next view
-  await load();
 }
 
 function mic(){
