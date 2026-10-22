@@ -292,23 +292,37 @@ def llm(system, hist, user):
     txt = ""
     try:
         if E.get("GROQ_API_KEY") and not use_gemini:
-            r = requests.post("https://api.groq.com/openai/v1/chat/completions", timeout=15,
+            model = E.get("GROQ_MODEL", "openai/gpt-oss-120b")
+            r = requests.post("https://api.groq.com/openai/v1/chat/completions", timeout=20,
                               headers={"Authorization": "Bearer " + E["GROQ_API_KEY"]},
-                              json={"model": E.get("GROQ_MODEL", "openai/gpt-oss-120b"), "temperature": 0.2,
-                                    "max_tokens": 250,
+                              json={"model": model, "temperature": 0.2,
+                                    "max_tokens": 1024,
                                     "response_format": {"type": "json_object"},
                                     "messages": [{"role": "system", "content": system}, *hist, {"role": "user", "content": user}]})
             j = r.json()
             txt = ((j.get("choices") or [{}])[0].get("message") or {}).get("content", "")
             if not txt:
-                print("Groq error:", str(j)[:300])
+                print("Groq primary error, trying fallback model:", str(j)[:250])
+                # Secondary attempt with qwen on Groq or without json_object constraint
+                for alt in ["qwen/qwen3.8-27b", model]:
+                    try:
+                        r2 = requests.post("https://api.groq.com/openai/v1/chat/completions", timeout=15,
+                                           headers={"Authorization": "Bearer " + E["GROQ_API_KEY"]},
+                                           json={"model": alt, "temperature": 0.2, "max_tokens": 800,
+                                                 "messages": [{"role": "system", "content": system}, *hist, {"role": "user", "content": user}]})
+                        if r2.ok:
+                            txt = ((r2.json().get("choices") or [{}])[0].get("message") or {}).get("content", "")
+                            if txt:
+                                break
+                    except Exception as alt_err:
+                        print("Fallback attempt error:", alt_err)
         elif use_gemini:
             model = E.get("GEMINI_MODEL", "gemini-2.0-flash")
             contents = [{"role": "user" if h["role"] == "user" else "model", "parts": [{"text": h["content"]}]} for h in hist]
             contents.append({"role": "user", "parts": [{"text": user}]})
             r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={E['GOOGLE_API_KEY']}",
                               timeout=15, json={"systemInstruction": {"parts": [{"text": system}]}, "contents": contents,
-                                                "generationConfig": {"responseMimeType": "application/json", "temperature": 0.2, "maxOutputTokens": 250}})
+                                                "generationConfig": {"responseMimeType": "application/json", "temperature": 0.2, "maxOutputTokens": 800}})
             j = r.json()
             try:
                 txt = j["candidates"][0]["content"]["parts"][0]["text"]
@@ -317,18 +331,37 @@ def llm(system, hist, user):
         else:
             return {"reply": "Demo mode: add GROQ_API_KEY or GOOGLE_API_KEY in the .env file to enable the AI brain.", "lang": "mr-IN", "handoff": False, "end": False, "detected_fillers": []}
     except Exception as e:
-        print("LLM error:", e)
-        return {"reply": "माफ करा, तांत्रिक समस्येमुळे प्रक्रिया करता आली नाही. कृपया पुन्हा बोला. धन्यवाद!", "lang": "mr-IN", "handoff": False, "end": False, "detected_fillers": []}
-    try:
-        out = json.loads(re.sub(r"```json|```", "", txt).strip())
-        out.setdefault("reply", "")
-        out.setdefault("lang", "mr-IN")
-        out.setdefault("handoff", False)
-        out.setdefault("end", False)
-        out.setdefault("detected_fillers", [])
-        return out
-    except Exception:
-        return {"reply": txt or "नमस्कार, कृपया पुन्हा सांगा. धन्यवाद!", "lang": "mr-IN", "handoff": False, "end": False, "detected_fillers": []}
+        print("LLM call exception:", e)
+
+    # Parse JSON output robustly
+    if txt:
+        try:
+            cleaned = re.sub(r"```json|```", "", txt).strip()
+            match = re.search(r"\{[\s\S]*\}", cleaned)
+            payload = match.group(0) if match else cleaned
+            out = json.loads(payload)
+            out.setdefault("reply", "")
+            out.setdefault("lang", "mr-IN")
+            out.setdefault("handoff", False)
+            out.setdefault("end", False)
+            out.setdefault("detected_fillers", [])
+            if out.get("reply"):
+                return out
+        except Exception as pe:
+            print("JSON parse fallback on raw text:", pe, "txt was:", txt[:200])
+
+    # Smart contextual fallback when LLM encounters an unexpected network issue
+    u = user.lower()
+    if any(w in u for w in ["वोटर", "voter", "id", "ओळखपत्र", "कार्ड", "नाही", "नाहीये"]):
+        fb = "काही काळजी करू नका, आपले नाव मतदार यादीत असल्यास आपण आधार कार्ड, पॅन कार्ड, ड्रायव्हिंग लायसन्स किंवा पासपोर्ट दाखवून मतदान करू शकता. नवीन ओळखपत्रासाठी Form 6 भरा किंवा 1950 वर संपर्क करा."
+    elif any(w in u for w in ["केंद्र", "booth", "कुठे", "पत्ता", "शाळा"]):
+        fb = "आपले मतदान केंद्र संबंधित जिल्हा परिषद शाळा किंवा वॉर्ड कार्यालयात असते. अचूक माहितीसाठी voters.eci.gov.in तपासा किंवा 1950 वर कॉल करा."
+    elif any(w in u for w in ["योजना", "scheme", "पैसे", "लाडकी बहीण", "शेतकरी"]):
+        fb = "शासनाच्या योजना जसे की मुख्यमंत्री माझी लाडकी बहीण, आयुष्मान भारत किंवा शेतकरी सन्मान निधी याबद्दल सविस्तर माहितीसाठी आपण जवळच्या सेतू केंद्रात संपर्क करू शकता."
+    else:
+        fb = "हो नक्कीच, मी आपल्या सेवेसाठी तत्पर आहे. कृपया आपला प्रश्न किंवा शंका सांगा, मी संपूर्ण मदत करते."
+
+    return {"reply": fb, "lang": "mr-IN", "handoff": False, "end": False, "detected_fillers": []}
 
 
 def sarvam_key():
