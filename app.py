@@ -102,10 +102,27 @@ HINDI_MARKERS = {
 }
 
 
+ROMAN_MARATHI_MARKERS = {
+    "thika", "thik", "ahe", "aahe", "nahi", "nahiy", "nahiye", "chalel", "chaltay",
+    "dhanyawad", "dhanyavad", "samajla", "kalala", "namaskar", "kasa",
+    "kase", "kuthe", "kadhi", "kay", "bara", "bare", "mhanje", "pan"
+}
+
+ROMAN_HINDI_MARKERS = {
+    "theek", "shukriya", "hai", "kya", "kaise", "kahan", "kuch", "chahiye"
+}
+
+
 def detect_language(text, fallback_lang="mr-IN"):
     t = text.strip()
     if not t:
         return fallback_lang
+    t_words = set(re.findall(r"\b[a-zA-Z]+\b", t.lower()))
+    if any(w in ROMAN_MARATHI_MARKERS for w in t_words):
+        return "mr-IN"
+    if any(w in ROMAN_HINDI_MARKERS for w in t_words):
+        return "hi-IN"
+
     ascii_chars = sum(1 for c in t if c.isascii() and c.isalpha())
     total_letters = sum(1 for c in t if c.isalpha())
     if total_letters > 0 and (ascii_chars / total_letters) > 0.65:
@@ -224,6 +241,45 @@ def active_script(bot, scheme="", preferred_lang="mr-IN"):
     return next((s for s in db["scripts"] if s["bot"] == bot and s["status"] == "live"), None)
 
 
+FAREWELLS = {
+    "mr-IN": "नक्कीच! बहुमूल्य वेळ दिल्याबद्दल मनापासून धन्यवाद. आपला दिवस शुभ आणि आनंददायी जावो, सस्नेह नमस्कार! 🙏",
+    "hi-IN": "बहुत-बहुत धन्यवाद! आपका दिन शुभ और मंगलमय हो। किसी भी सहायता के लिए पुनः संपर्क करें, सादर प्रणाम! 🙏",
+    "en-IN": "Thank you so much for your time! Wishing you a wonderful and pleasant day ahead. Please feel free to reach out anytime. Have a great day! 🙏"
+}
+
+
+def is_closing_phrase(text):
+    """Detect if caller is saying acknowledgment/closing words like thika, ٹھیک, thik ahe, ok, thank you, bye."""
+    if not text:
+        return False
+    t = re.sub(r"[^\w\s]", "", str(text).lower()).strip()
+    words = t.split()
+    if not words:
+        return False
+    exact_set = {
+        "thik", "thika", "theek", "theeka", "thik ahe", "thika ahe", "thik aahe",
+        "theek hai", "thik hai", "theek hai ji", "thik hai ji",
+        "ठीक", "ठीक आहे", "ठीक आहे धन्यवाद", "ठीक आहे समजलं", "ठीक आहे चालतंय", "ठीक आहे चालेल",
+        "ठीक है", "ठीक है धन्यवाद", "ठीक है शुक्रिया", "ठीक है जी",
+        "bara", "bare", "bar", "बरं", "बरं आहे", "chalel", "चालेल", "हो चालेल", "चालतंय",
+        "dhanyawad", "dhanyavad", "धन्यवाद", "खूप धन्यवाद", "मनापासून धन्यवाद", "शुक्रिया", "shukriya",
+        "thank you", "thanks", "thank u", "thx", "thank you so much", "thanks a lot",
+        "ok", "okay", "okie", "ok thank you", "ok thanks", "ok bye", "k",
+        "bye", "goodbye", "बाय", "टाटा", "अलविदा", "namaskar", "नमस्कार", "राम राम",
+        "samajla", "samajh gaya", "samajh gayi", "समजलं", "कळलं", "समजले", "माहिती मिळाली",
+        "kaahi nahi", "kahi nahi", "kuch nahi", "काही नाही", "काही अडचण नाही", "काही प्रश्न नाही",
+        "thats all", "that is all", "done", "all good", "no problem", "no questions", "you too", "have a nice day"
+    }
+    if t in exact_set:
+        return True
+    if len(words) <= 5:
+        if any(w in words for w in ["thika", "thik", "theek", "चालेल", "chalel", "धन्यवाद", "dhanyawad", "शुक्रिया", "shukriya", "thanks", "bye"]):
+            return True
+        if "ठीक" in t or "बरं" in t:
+            return True
+    return False
+
+
 def sys_prompt(call):
     sc = next((s for s in db["scripts"] if s["id"] == call.get("scriptId")), None)
     sch = next((s for s in db["schemes"] if s["id"] == call.get("scheme")), None)
@@ -277,6 +333,14 @@ CORE INSTRUCTIONS:
    - Keep replies within 1-2 SHORT, crisp spoken sentences that sound natural over a phone call.
    - Do NOT write long paragraphs. Be BRIEF and direct.
    - Maximum 40-50 words per reply. Shorter is better.
+
+6. CALL CONCLUSION & CLOSING FAREWELL ("HAVE A NICE DAY"):
+   - When the caller says words like "ठीक आहे", "thika", "thik", "बरं", "चालेल", "काही नाही", "समजलं", "धन्यवाद", "thank you", "thanks", "ok", "okay", "bye", "टाटा", "that's all", or indicates their question is answered and they are concluding:
+   - YOU MUST SET "end": true.
+   - Reply with a warm, courteous parting message wishing them a wonderful/blessed day and thanking them:
+     * For Marathi (mr-IN): "नक्कीच! बहुमूल्य वेळ दिल्याबद्दल मनापासून धन्यवाद. आपला दिवस शुभ आणि आनंददायी जावो, सस्नेह नमस्कार! 🙏"
+     * For Hindi (hi-IN): "बहुत-बहुत धन्यवाद! आपका दिन शुभ और मंगलमय हो। किसी भी सहायता के लिए पुनः संपर्क करें, सादर प्रणाम! 🙏"
+     * For English (en-IN): "Thank you so much for your time! Wishing you a wonderful and pleasant day ahead. Please feel free to reach out anytime. Have a great day! 🙏"
 
 SCRIPT: {fill(sc['body'], ct, sch['name'] if sch else '') if sc else ''}
 SCHEME INFO: {(sch['name'] + ': ' + sch['info']) if sch else 'n/a'}
@@ -352,7 +416,14 @@ def llm(system, hist, user):
 
     # Smart contextual fallback when LLM encounters an unexpected network issue
     u = user.lower()
-    if any(w in u for w in ["वोटर", "voter", "id", "ओळखपत्र", "कार्ड", "नाही", "नाहीये"]):
+    if is_closing_phrase(u):
+        if any(w in u for w in ["thank", "bye", "okay", "alright", "day"]):
+            return {"reply": FAREWELLS["en-IN"], "lang": "en-IN", "handoff": False, "end": True, "detected_fillers": []}
+        elif any(w in u for w in ["शुक्रिया", "theek", "shukriya", "है"]):
+            return {"reply": FAREWELLS["hi-IN"], "lang": "hi-IN", "handoff": False, "end": True, "detected_fillers": []}
+        else:
+            return {"reply": FAREWELLS["mr-IN"], "lang": "mr-IN", "handoff": False, "end": True, "detected_fillers": []}
+    elif any(w in u for w in ["वोटर", "voter", "id", "ओळखपत्र", "कार्ड", "नाही", "नाहीये"]):
         fb = "काही काळजी करू नका, आपले नाव मतदार यादीत असल्यास आपण आधार कार्ड, पॅन कार्ड, ड्रायव्हिंग लायसन्स किंवा पासपोर्ट दाखवून मतदान करू शकता. नवीन ओळखपत्रासाठी Form 6 भरा किंवा 1950 वर संपर्क करा."
     elif any(w in u for w in ["केंद्र", "booth", "कुठे", "पत्ता", "शाळा"]):
         fb = "आपले मतदान केंद्र संबंधित जिल्हा परिषद शाळा किंवा वॉर्ड कार्यालयात असते. अचूक माहितीसाठी voters.eci.gov.in तपासा किंवा 1950 वर कॉल करा."
@@ -481,6 +552,15 @@ def run_turn(call, text):
     detected_fillers = detect_and_learn_fillers(text, call["lang"], llm_fillers)
     out["detected_fillers"] = detected_fillers
     out["lang"] = call["lang"]
+
+    # 4. Closing & graceful farewell (e.g. ठीक आहे, thika, धन्यवाद, ok, thank you, bye)
+    if is_closing_phrase(text) or out.get("end"):
+        out["end"] = True
+        lang = out.get("lang") or call.get("lang") or "mr-IN"
+        reply = out.get("reply", "")
+        farewell_keywords = ["शुभ जावो", "आनंददायी", "दिवस शुभ", "शुभ हो", "मंगलमय", "nice day", "great day", "wonderful day", "have a"]
+        if not any(k in reply.lower() for k in farewell_keywords):
+            out["reply"] = FAREWELLS.get(lang, FAREWELLS["mr-IN"])
 
     call["transcript"].append({"r": "bot", "t": out["reply"], "lang": call["lang"], "fillers": detected_fillers})
     if out["handoff"]:

@@ -551,6 +551,18 @@ async function sayIt(t){
     logIt('b',botReply,r.detected_fillers);
     play(r,botReply);
     if(r.handoff)toast('Hand-off: connecting the scheme expert');
+    if(r.end){
+      toast('✅ संभाषण संपन्न झाले / Call completed. Have a nice day! 🙏');
+      const chat=$('#chat');
+      if(chat){
+        const fin=document.createElement('div');
+        fin.className='sub';
+        fin.style.cssText='text-align:center;padding:10px 0;margin:8px 0;background:rgba(16,185,129,0.12);border-radius:8px;border:1px solid rgba(16,185,129,0.3);color:var(--text);font-weight:600';
+        fin.innerHTML='✨ संभाषण यशस्वीरीत्या संपन्न झाले (Call Completed — Have a nice day! 🙏)';
+        chat.appendChild(fin);
+        chat.scrollTop=1e9;
+      }
+    }
     fillersData = null; // Refresh fillers cache
     // Background state update WITHOUT re-rendering demo page DOM!
     api('/api/state').then(st=>{S=st;}).catch(()=>{});
